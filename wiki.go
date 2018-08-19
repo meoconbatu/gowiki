@@ -14,15 +14,15 @@ type Page struct {
 	Body  []byte
 }
 
-var templates = template.Must(template.ParseFiles("edit.html", "view.html"))
+var templates = template.Must(template.ParseFiles("tmpl/edit.html", "tmpl/view.html"))
 var validPath = regexp.MustCompile("^/(edit|save|view)/([a-zA-Z0-9]+)$")
 
 func (p *Page) save() error {
-	fileName := p.Title + ".txt"
+	fileName := "data/" + p.Title + ".txt"
 	return ioutil.WriteFile(fileName, p.Body, 0600)
 }
 func loadPage(title string) (*Page, error) {
-	fileName := title + ".txt"
+	fileName := "data/" + title + ".txt"
 	body, err := ioutil.ReadFile(fileName)
 	if err != nil {
 		return nil, err
@@ -53,6 +53,9 @@ func viewHandler(w http.ResponseWriter, r *http.Request, title string) {
 	}
 	renderTemplate(w, "view", p)
 }
+func rootHandler(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "/view/FrontPage", http.StatusFound)
+}
 func saveHandler(w http.ResponseWriter, r *http.Request, title string) {
 	body := r.FormValue("body")
 	p := &Page{Title: title, Body: []byte(body)}
@@ -81,5 +84,6 @@ func main() {
 	http.HandleFunc("/view/", makeHandler(viewHandler))
 	http.HandleFunc("/edit/", makeHandler(editHandler))
 	http.HandleFunc("/save/", makeHandler(saveHandler))
+	http.HandleFunc("/", rootHandler)
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
